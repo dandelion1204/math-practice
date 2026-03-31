@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>心算小達人 - 題目回顧版</title>
     <style>
         :root {
@@ -22,6 +22,11 @@
             padding: 20px;
             margin: 0;
             position: relative;
+
+            /* 修正：鎖定手勢，防止快速點擊導致的縮放，並防止選取文字 */
+            touch-action: manipulation;
+            -webkit-user-select: none;
+            user-select: none;
         }
 
         /* --- 修改：左上方與右上方按鈕樣式 --- */
@@ -47,6 +52,8 @@
             transition: all 0.2s ease;
             border: none;
             padding: 0;
+            /* 修正：按鈕本身也鎖定觸控行為 */
+            touch-action: manipulation;
         }
 
         .circle-btn:active {
@@ -148,6 +155,8 @@
             box-shadow: 0 5px 0 #ddd;
             cursor: pointer;
             transition: all 0.1s;
+            /* 修正：鎖定觸控行為 */
+            touch-action: manipulation;
         }
         .btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #ddd; }
         .btn-op { background: var(--secondary-color); color: white; box-shadow: 0 5px 0 #2e86de; }
