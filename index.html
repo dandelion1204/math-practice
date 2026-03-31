@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>心算小達人 - 題目回顧版</title>
+    <style>
+        :root {
+            --primary-color: #ff9f43;
+            --secondary-color: #54a0ff;
+            --success-color: #1dd1a1;
+            --danger-color: #ff6b6b;
+            --bg-color: #f8f9fa;
+        }
+
+        body {
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+
+        #setup-screen, #game-screen, #result-screen {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 95%;
+            max-width: 450px;
+            margin-top: 20px;
+        }
+
+        h1 { color: var(--primary-color); margin-bottom: 10px; }
+
+        .setting-row { margin: 20px 0; font-size: 20px; }
+        input[type="number"] {
+            font-size: 20px;
+            padding: 8px;
+            width: 80px;
+            text-align: center;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+
+        /* 遊戲畫面 */
+        #game-screen { display: none; }
+        #timer-container {
+            width: 100%;
+            height: 15px;
+            background: #eee;
+            border-radius: 10px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+        #timer-bar {
+            width: 100%;
+            height: 100%;
+            background: var(--danger-color);
+            transition: width 0.1s linear;
+        }
+
+        #question-display {
+            font-size: 56px;
+            font-weight: bold;
+            margin: 15px 0;
+            color: #333;
+            min-height: 70px;
+        }
+
+        #user-input {
+            font-size: 40px;
+            background: #f0f0f0;
+            margin: 10px auto 20px;
+            padding: 10px;
+            min-height: 50px;
+            border-radius: 10px;
+            color: var(--secondary-color);
+            border-bottom: 4px solid #ccc;
+        }
+
+        /* 計算機按鈕 */
+        .numpad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+        .btn {
+            padding: 18px;
+            font-size: 26px;
+            border: none;
+            border-radius: 12px;
+            background: #fff;
+            box-shadow: 0 5px 0 #ddd;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+        .btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #ddd; }
+        .btn-op { background: var(--secondary-color); color: white; box-shadow: 0 5px 0 #2e86de; }
+        .btn-start { background: var(--primary-color); color: white; font-size: 22px; padding: 15px; width: 100%; border-radius: 50px; margin-top: 15px; }
+        .btn-clear { background: var(--danger-color); color: white; box-shadow: 0 5px 0 #ee5253; }
+
+        /* 結果清單 */
+        #result-screen { display: none; max-width: 500px; }
+        .review-list {
+            text-align: left;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            border-top: 2px solid #eee;
+            padding-top: 10px;
+        }
+        .review-item {
+            padding: 8px;
+            border-bottom: 1px solid #fafafa;
+            display: flex;
+            justify-content: space-between;
+            font-size: 24px;
+        }
+        .review-question {
+            display: flex;
+            gap: 32px;
+        }
+        .correct { color: var(--success-color); font-weight: bold; }
+        .wrong { color: var(--danger-color); font-weight: bold; }
+
+        #progress { font-size: 16px; color: #888; }
+    </style>
+</head>
+<body>
+
+    <div id="setup-screen">
+        <h1>心算練習</h1>
+        <div class="setting-row">
+            設定題數：<input type="number" id="total-questions" value="10" min="1" max="72"> 題
+        </div>
+        <button class="btn btn-start" onclick="initGame()">開始</button>
+    </div>
+
+    <div id="game-screen">
+        <div id="progress">第 1 題 / 共 10 題</div>
+        <div id="timer-container"><div id="timer-bar"></div></div>
+        <div id="question-display">--</div>
+        <div id="user-input"></div>
+        <div class="numpad">
+            <button class="btn" onclick="press(1)">1</button>
+            <button class="btn" onclick="press(2)">2</button>
+            <button class="btn" onclick="press(3)">3</button>
+            <button class="btn" onclick="press(4)">4</button>
+            <button class="btn" onclick="press(5)">5</button>
+            <button class="btn" onclick="press(6)">6</button>
+            <button class="btn" onclick="press(7)">7</button>
+            <button class="btn" onclick="press(8)">8</button>
+            <button class="btn" onclick="press(9)">9</button>
+            <button class="btn btn-clear" onclick="press('C')">清除</button>
+            <button class="btn" onclick="press(0)">0</button>
+            <button class="btn btn-op" onclick="checkAnswer()">確定</button>
+        </div>
+    </div>
+
+    <div id="result-screen">
+        <h1>測驗結果</h1>
+        <div id="final-stats" style="font-size: 24px; margin: 10px 0;"></div>
+        <div class="review-list" id="review-list">
+            </div>
+        <button class="btn btn-start" onclick="location.reload()">再測一次</button>
+    </div>
+
+    <script>
+        let questions = [];
+        let currentIndex = 0;
+        let correctCount = 0;
+        let timer;
+        let timeLeft = 10;
+        let currentInput = "";
+        let history = []; // 儲存答題狀況
+
+        function generatePool() {
+            let pool = [];
+            for (let a = 2; a <= 9; a++) {
+                for (let b = 2; b <= 9; b++) {
+                    if (a + b >= 11 && a + b <= 18) pool.push({ q: `${a} + ${b}`, a: a + b });
+                }
+            }
+            for (let total = 11; total <= 17; total++) {
+                for (let b = 2; b <= 9; b++) {
+                    let diff = total - b;
+                    if (diff >= 1 && diff <= 9) pool.push({ q: `${total} - ${b}`, a: diff });
+                }
+            }
+            return pool.sort(() => Math.random() - 0.5);
+        }
+
+        function initGame() {
+            let num = parseInt(document.getElementById('total-questions').value);
+            num = Math.min(Math.max(num, 1), 72);
+            questions = generatePool().slice(0, num);
+            history = [];
+            currentIndex = 0;
+            correctCount = 0;
+
+            document.getElementById('setup-screen').style.display = 'none';
+            document.getElementById('game-screen').style.display = 'block';
+            showQuestion();
+        }
+
+        function showQuestion() {
+            if (currentIndex >= questions.length) {
+                endGame();
+                return;
+            }
+            currentInput = "";
+            document.getElementById('user-input').innerText = "";
+            document.getElementById('progress').innerText = `第 ${currentIndex + 1} 題 / 共 ${questions.length} 題`;
+            document.getElementById('question-display').innerText = questions[currentIndex].q;
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(timer);
+            timeLeft = 10;
+            updateBar();
+            timer = setInterval(() => {
+                timeLeft -= 0.1;
+                updateBar();
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    checkAnswer(true);
+                }
+            }, 100);
+        }
+
+        function updateBar() {
+            document.getElementById('timer-bar').style.width = (timeLeft / 10) * 100 + "%";
+        }
+
+        function press(val) {
+            if (val === 'C') currentInput = "";
+            else if (currentInput.length < 2) currentInput += val;
+            document.getElementById('user-input').innerText = currentInput;
+        }
+
+        function checkAnswer(isTimeout = false) {
+            clearInterval(timer);
+            const correctAns = questions[currentIndex].a;
+            const userAns = isTimeout ? "時間到" : parseInt(currentInput);
+            const isCorrect = !isTimeout && userAns === correctAns;
+
+            if (isCorrect) correctCount++;
+
+            // 存入紀錄
+            history.push({
+                q: questions[currentIndex].q,
+                ans: correctAns,
+                user: userAns,
+                isCorrect: isCorrect
+            });
+
+            // 視覺回饋
+            const display = document.getElementById('question-display');
+            display.innerText = questions[currentIndex].q + " = " + correctAns;
+            display.style.color = isCorrect ? 'var(--success-color)' : 'var(--danger-color)';
+
+            setTimeout(() => {
+                display.style.color = '#333';
+                currentIndex++;
+                showQuestion();
+            }, 800);
+        }
+
+        function endGame() {
+            document.getElementById('game-screen').style.display = 'none';
+            document.getElementById('result-screen').style.display = 'block';
+
+            const ratio = Math.round((correctCount / questions.length) * 100);
+            document.getElementById('final-stats').innerHTML = `得分：<b>${correctCount}</b> / ${questions.length}<br><small>正確率：${ratio}%</small>`;
+
+            const listHtml = history.map((item, index) => `
+                <div class="review-item">
+                    <span class="review-question">
+                        <span>${index + 1}.</span>
+                        <span>${item.q} = ${item.ans}</span>
+                    </span>
+                    <span class="${item.isCorrect ? 'correct' : 'wrong'}">
+                        ${item.isCorrect ? '✅' : '❌ (' + item.user + ')'}
+                    </span>
+                </div>
+            `).join('');
+            document.getElementById('review-list').innerHTML = listHtml;
+        }
+    </script>
+</body>
+</html>
